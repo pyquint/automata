@@ -10,6 +10,9 @@ def test_a_or_b_whole_star():
     assert A_OR_B_WHOLE_STAR.accepts("aba")
     assert A_OR_B_WHOLE_STAR.accepts("baaabbbbabababb")
 
+    assert not A_OR_B_WHOLE_STAR.accepts("c")
+    assert not A_OR_B_WHOLE_STAR.accepts("abc")
+
     # the e-closure of a state includes itself
     assert A_OR_B_WHOLE_STAR.epsilon_closure({State("s0")}) == {
         State("s0"),

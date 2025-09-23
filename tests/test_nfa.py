@@ -4,6 +4,16 @@ from automata import NFA, State
 from automata.nfa import epsilon
 
 
+def test_non_string_input():
+    test_dfa = NFA({q0 := State("q0")}, {"a"}, {q0: {"a": {q0}}}, {q0}, {q0})
+
+    with pytest.raises(TypeError):
+        _ = test_dfa.accepts(1)  # pyright: ignore[reportArgumentType]
+
+    with pytest.raises(TypeError):
+        _ = test_dfa.accepts({"a"})  # pyright: ignore[reportArgumentType]
+
+
 def test_no_states():
     with pytest.raises(ValueError):
         _ = NFA(set(), {"a"}, {}, {q0 := State("q0")}, {q0})
@@ -90,18 +100,6 @@ def test_unrecognized_accepting():
     assert test_nfa.accepting == {q5}
 
 
-def test_non_string_base_state_name():
-    test_nfa = NFA(
-        {q0 := State("q0"), q1 := State("q1")}, {"a"}, {q0: {"a": {q0}}}, {q0, q1}, {q0}
-    )
-
-    assert test_nfa.initial == {new := State(f"{NFA.base_state_name}0")}
-    assert test_nfa.epsilon_closure({new}) == {new, q0, q1}
-
-    with pytest.raises(TypeError):
-        NFA.set_base_state_name(1)  # pyright: ignore[reportArgumentType]
-
-
 def test_concat():
     a = NFA(
         {a1 := State("a1"), a2 := State("a2")},
@@ -150,19 +148,27 @@ def test_union():
 
     a_or_b = NFA.union(a, b)
 
-    new0 = State(f"{NFA.base_state_name}0")
-    new1 = State(f"{NFA.base_state_name}1")
+    new_initial = State(f"{State.base_name}{State.instance_counter - 2}")
+    new_accepting = State(f"{State.base_name}{State.instance_counter - 1}")
 
-    assert a_or_b.states == a.states | b.states | {new0, new1}
+    assert a_or_b.states == a.states | b.states | {new_initial, new_accepting}
     assert a_or_b.alphabet == a.alphabet | b.alphabet
-    assert a_or_b.initial == {new0}
-    assert a_or_b.accepting == {new1}
+    assert a_or_b.initial == {new_initial}
+    assert a_or_b.accepting == {new_accepting}
 
     assert a_or_b.delta(a1, "a") == {a2} == a_or_b.transitions[a1]["a"]
     assert a_or_b.delta(b1, "b") == {b2} == a_or_b.transitions[b1]["b"]
-    assert a_or_b.delta(new0, epsilon) == {a1, b1} == a_or_b.transitions[new0][epsilon]
-    assert a_or_b.delta(a2, epsilon) == {new1} == a_or_b.transitions[a2][epsilon]
-    assert a_or_b.delta(b2, epsilon) == {new1} == a_or_b.transitions[b2][epsilon]
+    assert (
+        a_or_b.delta(new_initial, epsilon)
+        == {a1, b1}
+        == a_or_b.transitions[new_initial][epsilon]
+    )
+    assert (
+        a_or_b.delta(a2, epsilon) == {new_accepting} == a_or_b.transitions[a2][epsilon]
+    )
+    assert (
+        a_or_b.delta(b2, epsilon) == {new_accepting} == a_or_b.transitions[b2][epsilon]
+    )
 
 
 def test_kleene_star():
@@ -176,11 +182,11 @@ def test_kleene_star():
 
     a_star = NFA.kleene_star(a)
 
-    new0 = State(f"{NFA.base_state_name}0")
-    new1 = State(f"{NFA.base_state_name}1")
+    new_initial = State(f"{State.base_name}{State.instance_counter - 2}")
+    new_accepting = State(f"{State.base_name}{State.instance_counter - 1}")
 
-    assert a_star.epsilon_closure({new0}) == {new0, a1, new1}
-    assert a_star.epsilon_closure({a2}) == {a1, a2, new1}
+    assert a_star.epsilon_closure({new_initial}) == {new_initial, a1, new_accepting}
+    assert a_star.epsilon_closure({a2}) == {a1, a2, new_accepting}
 
 
 def test_kleene_plus():
@@ -194,8 +200,8 @@ def test_kleene_plus():
 
     a_star = NFA.kleene_star(a, plus=True)
 
-    new0 = State(f"{NFA.base_state_name}0")
-    new1 = State(f"{NFA.base_state_name}1")
+    new_initial = State(f"{State.base_name}{State.instance_counter - 2}")
+    new_accepting = State(f"{State.base_name}{State.instance_counter - 1}")
 
-    assert a_star.epsilon_closure({new0}) == {new0, a1}
-    assert a_star.epsilon_closure({a2}) == {a1, a2, new1}
+    assert a_star.epsilon_closure({new_initial}) == {new_initial, a1}
+    assert a_star.epsilon_closure({a2}) == {a1, a2, new_accepting}

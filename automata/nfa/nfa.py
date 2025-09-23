@@ -1,6 +1,8 @@
+from functools import reduce
 from typing import override
 
 from automata.automaton import Automaton
+from automata.dfa.dfa import DFA
 from automata.nfa.epsilon import Epsilon, epsilon
 from automata.state import State
 
@@ -59,8 +61,8 @@ class NFA(Automaton):
         self.accepting = {new_accepting}
         return new_accepting
 
-    @staticmethod
-    def concat(nfa1: "NFA", nfa2: "NFA") -> "NFA":
+    @classmethod
+    def concat(cls, nfa1: "NFA", nfa2: "NFA") -> "NFA":
         new_transitions = nfa1.transitions | nfa2.transitions
         for accepting in nfa1.accepting:
             new_transitions[accepting] = {}
@@ -73,8 +75,8 @@ class NFA(Automaton):
             accepting=nfa2.accepting,
         )
 
-    @staticmethod
-    def union(nfa1: "NFA", nfa2: "NFA") -> "NFA":
+    @classmethod
+    def union(cls, nfa1: "NFA", nfa2: "NFA") -> "NFA":
         new_states = nfa1.states | nfa2.states
         new_transitions = nfa1.transitions | nfa2.transitions
         new_nfa = NFA(
@@ -87,8 +89,8 @@ class NFA(Automaton):
         _ = new_nfa._merge_accepting_states()
         return new_nfa
 
-    @staticmethod
-    def kleene_star(nfa: "NFA", plus: bool = False) -> "NFA":
+    @classmethod
+    def kleene_star(cls, nfa: "NFA", plus: bool = False) -> "NFA":
         new_nfa = NFA(
             states=nfa.states,
             alphabet=nfa.alphabet,
@@ -108,8 +110,53 @@ class NFA(Automaton):
             )
         return new_nfa
 
+    def to_dfa(self) -> DFA:
+        dfa_initial = self.epsilon_closure(self.initial)
+        dfa_states: list[set[State]] = [dfa_initial]
+        dfa_transitions: dict[State, dict[str, State]] = {}
+
+        # Algorithms & Models of Computation
+        # CS/ECE  374, Fall 2020
+        # 5.1.2: Algorithm for converting NFA to DFA, p.11
+        subsets_to_check = [dfa_initial]
+        while subsets_to_check:
+            X = subsets_to_check.pop(0)
+            new_dfa_transition = State.from_set(X)
+            dfa_transitions[new_dfa_transition] = {}
+            for a in self.alphabet:
+                U: set[State] = set()
+                for q in X:
+                    x1 = self.epsilon_closure({q})
+                    y1 = reduce(set[State].union, (self.delta(p, a) for p in x1))
+                    zqa = reduce(
+                        set[State].union, (self.epsilon_closure({r}) for r in y1), set()
+                    )
+                    U.update(zqa)
+                    if U not in dfa_states:
+                        subsets_to_check.append(U)
+                        dfa_states.append(U)
+                    dfa_transitions[new_dfa_transition][a] = State.from_set(U)
+
+        dfa_accepting = {
+            State.from_set(state)
+            for state in dfa_states
+            if self.accepting.intersection(state)
+        }
+        nullstate = State.from_set(set())
+        for a in self.alphabet:
+            dfa_transitions[nullstate][a] = nullstate
+        return DFA(
+            {State.from_set(s) for s in dfa_states},
+            self.alphabet,
+            dfa_transitions,
+            State.from_set(dfa_initial),
+            dfa_accepting,
+        )
+
     @override
     def _traverse(self, string: str) -> tuple[list[State], bool]:
+        if not isinstance(string, str):  # pyright: ignore[reportUnnecessaryIsInstance]
+            raise TypeError("DFA expects string input only.")  # pyright: ignore[reportUnreachable]
         is_valid: bool = False
         current_nodes: set[State] = self.epsilon_closure(self.initial)
         visited: list[State] = list(current_nodes)
@@ -149,17 +196,6 @@ class NFA(Automaton):
             return set()
 
     @override
-    def display_transition_table(self):
-        print("\t" + "\t".join((*self.alphabet, f"{epsilon}")))
-        for state in self.states:
-            print(f"{state}\t", end="")
-            for symbol in self.alphabet | {epsilon}:
-                print(
-                    {state.name for state in self.delta(state, symbol)} or "∅", end="\t"
-                )
-            print()
-
-    @override
     def _validate_transitions(
         self,
         transitions: dict[State, dict[str | Epsilon, set[State]]],
@@ -182,3 +218,12 @@ class NFA(Automaton):
             raise ValueError("Some state/s in transitions undefined in set of states.")
         elif any(symb not in self.alphabet for symb in symbols):
             raise ValueError("Transition symbols and alphabet do not match.")
+
+    @override
+    def print_transition_function(self):
+        for curr in sorted(self.transitions, key=lambda x: x.name):
+            for symbol in (symbols := self.transitions[curr]):
+                dests = ", ".join(
+                    dest.name for dest in sorted(symbols[symbol], key=lambda x: x.name)
+                )
+                print(f"δ({curr},{symbol}) = {{{dests}}}")

@@ -4,14 +4,6 @@ from automata.state import State
 
 
 class Automaton(ABC):
-    base_state_name: str = "new"
-
-    @classmethod
-    def set_base_state_name(cls, base_name: str):
-        if not isinstance(base_name, str):  # pyright: ignore[reportUnnecessaryIsInstance]
-            raise TypeError("Base name must be of type string.")  # pyright: ignore[reportUnreachable]
-        cls.base_state_name = base_name
-
     @staticmethod
     def _validate_states(states: set[State]):
         Automaton.__validate_sets_of_states(states, "states")
@@ -66,13 +58,14 @@ class Automaton(ABC):
 
     @classmethod
     def _new_unique_state(cls, existing: set[State]):
-        counter: int = 0
-        name: str = f"{cls.base_state_name}{counter}"
-        while any(s.name == name for s in existing):
-            name = f"{cls.base_state_name}{counter}"
-            counter += 1
-        return State(name)
+        new_state = State()
+        while new_state in existing:
+            print(existing)
+            print(State.base_name, State.instance_counter)
+            print(f"new: {new_state!r}")
+            new_state = State()
+        return new_state
 
     @abstractmethod
-    def display_transition_table(self):
+    def print_transition_function(self):
         pass

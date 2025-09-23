@@ -1,7 +1,6 @@
 from typing import override
 
 from automata.automaton import Automaton
-from automata.nfa import epsilon
 from automata.state import State
 
 
@@ -29,6 +28,8 @@ class DFA(Automaton):
 
     @override
     def _traverse(self, string: str) -> tuple[list[State], bool]:
+        if not isinstance(string, str):  # pyright: ignore[reportUnnecessaryIsInstance]
+            raise TypeError("DFA expects string input only.")  # pyright: ignore[reportUnreachable]
         is_valid: bool = False
         current_node: State | None = self.initial
         visited: list[State] = [current_node]
@@ -77,18 +78,13 @@ class DFA(Automaton):
             for _state in self.states
             for state in self.transitions.get(_state, {}).values()
         }
-        if epsilon in symbols:
-            raise TypeError("epsilon not allowed in DFA.")
-        elif any(state not in self.states for state in states):
+        if any(state not in self.states for state in states):
             raise ValueError("Some state/s in transitions undefined in set of states.")
         elif any(symb not in self.alphabet for symb in symbols):
             raise ValueError("Transition symbols and alphabet do not match.")
 
     @override
-    def display_transition_table(self):
-        print("\t" + "\t".join(self.alphabet))
-        for state in self.states:
-            print(f"{state!s}\t", end="")
-            for symbol in self.alphabet:
-                print(self.delta(state, symbol) or "∅", end="\t")
-            print()
+    def print_transition_function(self):
+        for curr in sorted(self.transitions, key=lambda x: x.name):
+            for symbol in (symbols := self.transitions[curr]):
+                print(f"δ({curr},{symbol}) = {symbols[symbol]}")

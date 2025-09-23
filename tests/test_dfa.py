@@ -3,6 +3,16 @@ import pytest
 from automata import DFA, State
 
 
+def test_non_string_input():
+    test_dfa = DFA({q0 := State("q0")}, {"a"}, {q0: {"a": q0}}, q0, {q0})
+
+    with pytest.raises(TypeError):
+        _ = test_dfa.accepts(1)  # pyright: ignore[reportArgumentType]
+
+    with pytest.raises(TypeError):
+        _ = test_dfa.accepts({"a"})  # pyright: ignore[reportArgumentType]
+
+
 def test_no_states():
     with pytest.raises(ValueError):
         _ = DFA(set(), {"a"}, {}, q0 := State("q0"), {q0})
