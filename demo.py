@@ -21,6 +21,7 @@ def main():
     print()
 
     # manual re to NFA
+    # "(a*)(b|c)"
     re = "a*b|c"
     tokens = RegExParser.tokenize(re)
     print("6a.", tokens)
@@ -49,30 +50,123 @@ def main():
     print()
 
     # NFA to DFA
-    e_to_a = NFA(
+
+    print("8. cs/ece 374 5.1.2")
+
+    print()
+
+    cs_374_512_nfa = NFA(
         states={
             q0 := State("q0"),
-            q1 := State("q1"),
-            q2 := State("q2"),
-            q3 := State("q3"),
+            a_q1 := State("q1"),
+            a_q2 := State("q2"),
+            a_q3 := State("q3"),
         },
         alphabet={"0", "1"},
         transitions={
-            q0: {epsilon: {q1}, "1": {q2}},
-            q1: {"0": {q3}},
-            q2: {epsilon: {q3}},
+            q0: {epsilon: {a_q1}, "1": {a_q2}},
+            a_q1: {"0": {a_q3}},
+            a_q2: {epsilon: {a_q3}},
         },
         initial={q0},
-        accepting={q3},
+        accepting={a_q3},
     )
 
-    print("8a. Sample NFA transition function:")
-    e_to_a.print_transition_function()
+    print("NFA states: ", cs_374_512_nfa.states)
+    print("NFA initial states: ", cs_374_512_nfa.initial)
+    print("NFA accepting states: ", cs_374_512_nfa.accepting)
+    print()
+    print("NFA transition function:")
+    cs_374_512_nfa.print_transition_function()
+
     print()
 
-    print("8b. Equivalent DFA's transition function:")
-    dfa = e_to_a.to_dfa()
-    dfa.print_transition_function()
+    cs_374_512_dfa = cs_374_512_nfa.to_dfa()
+
+    print("DFA states: ", cs_374_512_dfa.states)
+    print("DFA initial states: ", cs_374_512_dfa.initial)
+    print("DFA accepting state:", cs_374_512_dfa.accepting)
+    print()
+    print("DFA transition function:")
+    cs_374_512_dfa.print_transition_function()
+
+    print()
+
+    print("9. hw03_3")
+
+    hw03_3_nfa = NFA(
+        {a_q1 := State("q1"), a_q2 := State("q2"), a_q3 := State("q3")},
+        {"a", "b"},
+        {
+            a_q1: {"a": {a_q3}, epsilon: {a_q2}},
+            a_q2: {"a": {a_q1}},
+            a_q3: {"a": {a_q2}, "b": {a_q2, a_q3}},
+        },
+        {a_q1},
+        {a_q2},
+    )
+
+    print()
+
+    print("NFA states: ", hw03_3_nfa.states)
+    print("NFA initial states: ", hw03_3_nfa.initial)
+    print("NFA accepting states: ", hw03_3_nfa.accepting)
+    print()
+    print("NFA transition function:")
+    hw03_3_nfa.print_transition_function()
+
+    print()
+
+    hw03_3_dfa = hw03_3_nfa.to_dfa()
+
+    print("DFA states:", hw03_3_dfa.states)
+    print("DFA initial state:", hw03_3_dfa.initial)
+    print("DFA accepting states:", hw03_3_dfa.accepting)
+    print()
+    print("DFA transition function:")
+    hw03_3_dfa.print_transition_function()
+
+    print()
+
+    print("10. nj_cs341")
+
+    print()
+
+    nj_cs341_p53_nfa = NFA(
+        {
+            b_q1 := State("q1"),
+            b_q2 := State("q2"),
+            b_q3 := State("q3"),
+            b_q4 := State("q4"),
+        },
+        {"0", "1"},
+        {
+            b_q1: {"0": {b_q1}, "1": {b_q1, b_q2}},
+            b_q2: {"0": {b_q3}, epsilon: {b_q3}},
+            b_q3: {"1": {b_q4}},
+            b_q4: {"0": {b_q4}, "1": {b_q4}},
+        },
+        {b_q1},
+        {b_q4},
+    )
+
+    print("NFA states: ", nj_cs341_p53_nfa.states)
+    print("NFA initial states: ", nj_cs341_p53_nfa.initial)
+    print("NFA accepting states: ", nj_cs341_p53_nfa.accepting)
+    print()
+    print("NFA transition function:")
+    nj_cs341_p53_nfa.print_transition_function()
+
+    print()
+
+    nj_cs341_p53_dfa = nj_cs341_p53_nfa.to_dfa()
+
+    print("DFA states:", nj_cs341_p53_dfa.states)
+    print("DFA initial state:", nj_cs341_p53_dfa.initial)
+    print("DFA accepting states:", nj_cs341_p53_dfa.accepting)
+    print()
+    print("DFA transition function:")
+    nj_cs341_p53_dfa.print_transition_function()
 
 
 if __name__ == "__main__":

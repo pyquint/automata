@@ -25,8 +25,6 @@ def test_even_zeroes():
     assert not EVEN_NUMBER_OF_ZEROS.accepts("10")
     assert not EVEN_NUMBER_OF_ZEROS.accepts("1000001")
 
-    print(EVEN_NUMBER_OF_ZEROS.accepts)
-
 
 def test_even_occurence_each_char():
     assert EVEN_OCCURRENCE_EACH_CHAR.accepts("aa")

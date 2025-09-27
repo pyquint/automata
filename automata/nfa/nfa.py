@@ -77,12 +77,10 @@ class NFA(Automaton):
 
     @classmethod
     def union(cls, nfa1: "NFA", nfa2: "NFA") -> "NFA":
-        new_states = nfa1.states | nfa2.states
-        new_transitions = nfa1.transitions | nfa2.transitions
         new_nfa = NFA(
-            states=new_states,
+            states=nfa1.states | nfa2.states,
             alphabet=nfa1.alphabet | nfa2.alphabet,
-            transitions=new_transitions,
+            transitions=nfa1.transitions | nfa2.transitions,
             initial=nfa1.initial | nfa2.initial,
             accepting=nfa1.accepting | nfa2.accepting,
         )
@@ -122,6 +120,8 @@ class NFA(Automaton):
         while subsets_to_check:
             X = subsets_to_check.pop(0)
             new_dfa_transition = State.from_set(X)
+            if new_dfa_transition in dfa_transitions:
+                continue
             dfa_transitions[new_dfa_transition] = {}
             for a in self.alphabet:
                 U: set[State] = set()
@@ -143,8 +143,9 @@ class NFA(Automaton):
             if self.accepting.intersection(state)
         }
         nullstate = State.from_set(set())
-        for a in self.alphabet:
-            dfa_transitions[nullstate][a] = nullstate
+        if nullstate in dfa_transitions:
+            for a in self.alphabet:
+                dfa_transitions[nullstate][a] = nullstate
         return DFA(
             {State.from_set(s) for s in dfa_states},
             self.alphabet,
